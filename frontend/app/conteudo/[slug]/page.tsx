@@ -10,14 +10,13 @@ import { ptBR } from "date-fns/locale";
 import { BlockRenderer } from "@/components/block-renderer";
 import { SiteHeader } from "@/components/site-header";
 import { api, getErrorMessage } from "@/lib/api";
+import { siteName } from "@/lib/defaults";
 import type { Post, SiteSettings } from "@/lib/types";
-
-const defaultName = "Hospital Santa Vida";
 
 export default function ContentPage({ params }: { params: Promise<{ slug: string }> }) {
   const [slug, setSlug] = useState("");
   const [post, setPost] = useState<Post | null>(null);
-  const [hospitalName, setHospitalName] = useState(defaultName);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -30,7 +29,7 @@ export default function ContentPage({ params }: { params: Promise<{ slug: string
     Promise.all([api.get<Post>(`/posts/${slug}`), api.get<SiteSettings>("/settings")])
       .then(([postResponse, settingsResponse]) => {
         setPost(postResponse.data);
-        setHospitalName(settingsResponse.data.hospitalName);
+        setSettings(settingsResponse.data);
       })
       .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setLoading(false));
@@ -38,7 +37,7 @@ export default function ContentPage({ params }: { params: Promise<{ slug: string
 
   return (
     <div className="min-h-screen">
-      <SiteHeader hospitalName={hospitalName} />
+      <SiteHeader hospitalName={siteName(settings?.hospitalName)} tagline={settings?.tagline} />
 
       <main className="mx-auto max-w-5xl px-5 pb-24 pt-10 lg:px-8 lg:pt-14">
         <Link
@@ -94,7 +93,8 @@ export default function ContentPage({ params }: { params: Promise<{ slug: string
       </main>
 
       <footer className="border-t border-brand-100 bg-white py-8 text-center text-sm text-slate-500">
-        © {new Date().getFullYear()} {hospitalName} — Cuidado que acolhe.
+        © {new Date().getFullYear()} {siteName(settings?.hospitalName)}
+        {settings?.tagline ? ` — ${settings.tagline}.` : ""}
       </footer>
     </div>
   );

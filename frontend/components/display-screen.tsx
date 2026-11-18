@@ -4,17 +4,18 @@ import { AnimatePresence, motion } from "motion/react";
 import { Activity, Pause, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import type { Post, SiteSettings } from "@/lib/types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { siteName } from "@/lib/defaults";
+import type { DisplayPost, SiteSettings } from "@/lib/types";
 
-export const defaultDisplaySettings: SiteSettings = {
-  id: "main",
-  hospitalName: "Hospital Santa Vida",
-  tagline: "Cuidado que acolhe, informação que transforma",
-  carouselIntervalMs: 7000,
-  primaryColor: "#0EA5A4",
-  secondaryColor: "#FF8A65",
-};
+/** Estado ao vivo aplicado pela TV quando ela é controlada pelo celular. */
+export interface DisplayRemoteState {
+  paused: boolean;
+  pinnedPostId: string | null;
+  currentPostId: string | null;
+  intervalMs: number | null;
+  stateVersion: number;
+}
 
 export function DisplayScreen({
   posts,
@@ -23,16 +24,40 @@ export function DisplayScreen({
   loading = false,
   screenName,
   allowPortalLink = true,
+  remote,
+  onPostChange,
 }: {
-  posts: Post[];
+  posts: DisplayPost[];
   settings: SiteSettings;
   error?: string;
   loading?: boolean;
   screenName?: string;
   allowPortalLink?: boolean;
+  remote?: DisplayRemoteState;
+  onPostChange?: (postId: string) => void;
 }) {
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [localPaused, setLocalPaused] = useState(false);
+  const [appliedVersion, setAppliedVersion] = useState<number | null>(null);
+  const reportedPost = useRef<string | null>(null);
+
+  const pinnedIndex = remote?.pinnedPostId
+    ? posts.findIndex((post) => post.id === remote.pinnedPostId)
+    : -1;
+  const currentIndex = pinnedIndex >= 0 ? pinnedIndex : index;
+  const paused = localPaused || Boolean(remote?.paused);
+  const interval = remote?.intervalMs ?? (settings.carouselIntervalMs || 7000);
+
+  // Obedece o controle remoto: aplica o estado quando um comando chega
+  // (stateVersion muda) e, na primeira leitura, sincroniza com o conteúdo que já
+  // estava no ar. Ajustar o estado durante a renderização é o padrão recomendado
+  // pelo React para derivar estado de props (sem efeito e sem renderização extra).
+  if (remote && appliedVersion !== remote.stateVersion) {
+    setAppliedVersion(remote.stateVersion);
+    const targetId = remote.pinnedPostId ?? remote.currentPostId;
+    const target = targetId ? posts.findIndex((post) => post.id === targetId) : -1;
+    if (target >= 0) setIndex(target);
+  }
 
   const goTo = useCallback(
     (next: number) => {
@@ -43,24 +68,32 @@ export function DisplayScreen({
   );
 
   useEffect(() => {
-    if (paused || posts.length < 2) return;
+    if (paused || pinnedIndex >= 0 || posts.length < 2) return;
     const timer = window.setInterval(() => {
       setIndex((current) => (current + 1) % posts.length);
-    }, settings.carouselIntervalMs || 7000);
+    }, interval);
     return () => window.clearInterval(timer);
-  }, [paused, posts.length, settings.carouselIntervalMs]);
+  }, [paused, pinnedIndex, posts.length, interval]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowRight") goTo(index + 1);
-      if (event.key === "ArrowLeft") goTo(index - 1);
-      if (event.key === " ") setPaused((value) => !value);
+      if (pinnedIndex >= 0) return;
+      if (event.key === "ArrowRight") goTo(currentIndex + 1);
+      if (event.key === "ArrowLeft") goTo(currentIndex - 1);
+      if (event.key === " ") setLocalPaused((value) => !value);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goTo, index]);
+  }, [goTo, currentIndex, pinnedIndex]);
 
-  const post = posts[index];
+  const post = posts[currentIndex];
+
+  // Avisa o servidor qual conteúdo está no ar, para o celular acompanhar.
+  useEffect(() => {
+    if (!post || !onPostChange || reportedPost.current === post.id) return;
+    reportedPost.current = post.id;
+    onPostChange(post.id);
+  }, [post, onPostChange]);
 
   if (loading) {
     return <div className="min-h-screen animate-pulse bg-slate-900" />;
@@ -82,8 +115,6 @@ export function DisplayScreen({
       </div>
     );
   }
-
-  const interval = settings.carouselIntervalMs || 7000;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-slate-950 text-white">
@@ -117,7 +148,7 @@ export function DisplayScreen({
             </span>
             <div>
               <p className="text-lg font-black leading-tight sm:text-2xl">
-                {screenName || settings.hospitalName}
+                {screenName || siteName(settings.hospitalName)}
               </p>
               <p className="text-xs font-semibold text-white/70 sm:text-sm">{settings.tagline}</p>
             </div>
@@ -125,7 +156,7 @@ export function DisplayScreen({
           <button
             type="button"
             aria-label={paused ? "Reproduzir" : "Pausar"}
-            onClick={() => setPaused((value) => !value)}
+            onClick={() => setLocalPaused((value) => !value)}
             className="pointer-events-auto flex size-11 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20 sm:size-12"
           >
             {paused ? <Play className="size-5" /> : <Pause className="size-5" />}
@@ -156,7 +187,7 @@ export function DisplayScreen({
               </p>
             )}
             <p className="mt-6 text-sm font-bold uppercase tracking-widest text-white/60 sm:text-base">
-              {String(index + 1).padStart(2, "0")} / {String(posts.length).padStart(2, "0")}
+              {String(currentIndex + 1).padStart(2, "0")} / {String(posts.length).padStart(2, "0")}
             </p>
           </motion.div>
         </AnimatePresence>
@@ -170,7 +201,7 @@ export function DisplayScreen({
                 aria-label={`Ir para destaque ${dotIndex + 1}`}
                 onClick={() => goTo(dotIndex)}
                 className={`pointer-events-auto h-2 rounded-full transition-all duration-300 ${
-                  dotIndex === index ? "w-12 bg-white" : "w-3 bg-white/40 hover:bg-white/70"
+                  dotIndex === currentIndex ? "w-12 bg-white" : "w-3 bg-white/40 hover:bg-white/70"
                 }`}
               />
             ))}

@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { ToastProvider } from "@/components/toast-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SITE_NAME_FALLBACK } from "@/lib/defaults";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -11,8 +12,9 @@ const nunito = Nunito({
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 
+// Título genérico: o nome do hospital é definido no painel e aparece no cabeçalho de cada página.
 export const metadata: Metadata = {
-  title: "Hospital Santa Vida — Informação que acolhe",
+  title: SITE_NAME_FALLBACK,
   description: "Portal de informações, campanhas e novidades do hospital.",
 };
 

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DisplayScreen, defaultDisplaySettings } from "@/components/display-screen";
+import { DisplayScreen } from "@/components/display-screen";
 import { api, getErrorMessage } from "@/lib/api";
+import { defaultSiteSettings } from "@/lib/defaults";
 import type { Post, SiteSettings } from "@/lib/types";
 
 export default function DisplayPage() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [settings, setSettings] = useState<SiteSettings>(defaultDisplaySettings);
+  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 

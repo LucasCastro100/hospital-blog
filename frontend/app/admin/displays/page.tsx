@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Check, Copy, ExternalLink, MonitorPlay, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Gamepad2, MonitorPlay, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -230,6 +230,12 @@ export default function AdminDisplaysPage() {
               <Button size="sm" variant="outline" className="rounded-lg" onClick={() => void copyUrl(display.slug)}>
                 <Copy className="size-3.5" />
                 Copiar link
+              </Button>
+              <Button asChild size="sm" variant="outline" className="rounded-lg">
+                <Link href={`/admin/controle?tela=${display.slug}`}>
+                  <Gamepad2 className="size-3.5" />
+                  Controle
+                </Link>
               </Button>
             </div>
           </motion.div>

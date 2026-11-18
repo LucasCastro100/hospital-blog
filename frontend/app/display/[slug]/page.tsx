@@ -1,51 +1,87 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
-import { DisplayScreen, defaultDisplaySettings } from "@/components/display-screen";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { DisplayScreen } from "@/components/display-screen";
 import { api, getErrorMessage } from "@/lib/api";
-import type { Post, SiteSettings } from "@/lib/types";
+import { defaultSiteSettings } from "@/lib/defaults";
+import type { DisplayState, SiteSettings } from "@/lib/types";
 
-interface DisplayPayload {
-  id: string;
-  name: string;
-  slug: string;
-  posts: Post[];
-}
+/** Intervalo de consulta do estado da tela (controle remoto pelo celular). */
+const STATE_POLL_MS = 2000;
 
 function ScreenContent() {
   const params = useParams<{ slug: string }>();
   const slug = typeof params.slug === "string" ? params.slug : "";
 
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [screen, setScreen] = useState<DisplayPayload | null>(null);
-  const [settings, setSettings] = useState<SiteSettings>(defaultDisplaySettings);
+  const [state, setState] = useState<DisplayState | null>(null);
+  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!slug) return;
-    Promise.all([
-      api.get<DisplayPayload>(`/displays/${slug}`),
-      api.get<SiteSettings>("/settings"),
-    ])
-      .then(([screenResponse, settingsResponse]) => {
-        setScreen(screenResponse.data);
-        setPosts(screenResponse.data.posts ?? []);
-        setSettings(settingsResponse.data);
-      })
-      .catch((err) => setError(getErrorMessage(err)))
-      .finally(() => setLoading(false));
+    api
+      .get<SiteSettings>("/settings")
+      .then((response) => setSettings(response.data))
+      .catch(() => undefined);
   }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+
+    function loadState() {
+      api
+        .get<DisplayState>(`/displays/${slug}/state`)
+        .then((response) => {
+          if (cancelled) return;
+          setState(response.data);
+          setError("");
+        })
+        .catch((err) => {
+          if (!cancelled) setError(getErrorMessage(err));
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }
+
+    loadState();
+    const timer = window.setInterval(loadState, STATE_POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [slug]);
+
+  const reportPost = useCallback(
+    (postId: string) => {
+      void api.post(`/displays/${slug}/heartbeat`, { postId }).catch(() => undefined);
+    },
+    [slug],
+  );
 
   return (
     <DisplayScreen
-      posts={posts}
+      posts={state?.posts ?? []}
       settings={settings}
       error={error}
       loading={loading}
-      screenName={screen?.name}
+      screenName={state?.name}
       allowPortalLink={false}
+      remote={
+        state
+          ? {
+              paused: state.paused,
+              pinnedPostId: state.pinnedPostId,
+              currentPostId: state.currentPostId,
+              intervalMs: state.intervalMs,
+              stateVersion: state.stateVersion,
+            }
+          : undefined
+      }
+      onPostChange={reportPost}
     />
   );
 }

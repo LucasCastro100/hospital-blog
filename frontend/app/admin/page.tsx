@@ -19,21 +19,13 @@ import { SettingsForm } from "@/components/settings-form";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { defaultSiteSettings } from "@/lib/defaults";
 import type { Post, SiteSettings, SystemUser } from "@/lib/types";
-
-const defaultSettings: SiteSettings = {
-  id: "main",
-  hospitalName: "Hospital Santa Vida",
-  tagline: "Cuidado que acolhe, informação que transforma",
-  carouselIntervalMs: 7000,
-  primaryColor: "#0EA5A4",
-  secondaryColor: "#FF8A65",
-};
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings);
   const [userCount, setUserCount] = useState(0);
   const [loading, setLoading] = useState(true);
 

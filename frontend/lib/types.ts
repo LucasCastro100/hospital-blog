@@ -71,15 +71,54 @@ export interface Post {
   updatedAt?: string;
 }
 
+/** Conteúdo no formato enxuto usado pelas telas de exibição. */
+export interface DisplayPost {
+  id: string;
+  title: string;
+  slug: string;
+  summary?: string | null;
+  coverImage?: string | null;
+  order: number;
+}
+
 export interface DisplayScreen {
   id: string;
   name: string;
   slug: string;
   active: boolean;
+  paused?: boolean;
+  pinnedPostId?: string | null;
+  currentPostId?: string | null;
+  intervalMs?: number | null;
+  stateVersion?: number;
   createdAt?: string;
   posts?: Post[];
   postIds?: string[];
 }
+
+/** Estado ao vivo de uma tela, consultado pela TV e pelo controle remoto. */
+export interface DisplayState {
+  id: string;
+  name: string;
+  slug: string;
+  active: boolean;
+  paused: boolean;
+  pinnedPostId: string | null;
+  currentPostId: string | null;
+  intervalMs: number | null;
+  stateVersion: number;
+  posts: DisplayPost[];
+}
+
+export type DisplayControlAction =
+  | "pause"
+  | "resume"
+  | "next"
+  | "prev"
+  | "goto"
+  | "pin"
+  | "unpin"
+  | "interval";
 
 export interface SiteSettings {
   id: string;

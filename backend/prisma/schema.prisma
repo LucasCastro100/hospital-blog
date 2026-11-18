@@ -46,13 +46,19 @@ model User {
 }
 
 model DisplayScreen {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  active        Boolean   @default(true)
+  paused        Boolean   @default(false)
+  pinnedPostId  String?
+  currentPostId String?
+  intervalMs    Int?
+  stateVersion  Int       @default(0)
+  lastCommandAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  posts         Post[]
 
   @@map("display_screens")
 }
@@ -91,8 +97,8 @@ model Block {
 
 model SiteSetting {
   id                 String   @id @default("main")
-  hospitalName       String   @default("Hospital Santa Vida")
-  tagline            String   @default("Cuidado que acolhe, informação que transforma")
+  hospitalName       String   @default("")
+  tagline            String   @default("")
   carouselIntervalMs Int      @default(7000)
   primaryColor       String   @default("#0EA5A4")
   secondaryColor     String   @default("#FF8A65")

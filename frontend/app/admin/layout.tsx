@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import {
   ArrowLeft,
+  Gamepad2,
   HeartPulse,
   LayoutDashboard,
   LogOut,
@@ -20,12 +21,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
+import { defaultSiteSettings, siteName } from "@/lib/defaults";
+import type { SiteSettings } from "@/lib/types";
 
 const adminNav = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
   { href: "/admin/posts", label: "Conteúdos", icon: Newspaper },
   { href: "/display", label: "Tela geral", icon: MonitorPlay },
   { href: "/admin/displays", label: "Telas / TVs", icon: MonitorPlay },
+  { href: "/admin/controle", label: "Controle das TVs", icon: Gamepad2 },
   { href: "/admin/users", label: "Usuários", icon: Users, adminOnly: true },
 ];
 
@@ -61,10 +66,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [loading, user, router]);
+
+  useEffect(() => {
+    api
+      .get<SiteSettings>("/settings")
+      .then((response) => setSettings(response.data))
+      .catch(() => undefined);
+  }, []);
+
+  const hospitalName = siteName(settings.hospitalName);
 
   if (loading || !user) {
     return (
@@ -87,7 +102,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <HeartPulse className="size-6" />
           </span>
           <span className="flex flex-col">
-            <span className="text-base font-black leading-tight text-slate-800">Santa Vida</span>
+            <span className="text-base font-black leading-tight text-slate-800">{hospitalName}</span>
             <span className="text-xs font-semibold text-brand-600">Painel administrativo</span>
           </span>
         </Link>
@@ -136,7 +151,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <span className="flex size-10 items-center justify-center rounded-xl bg-brand-500 text-white">
                     <HeartPulse className="size-5" />
                   </span>
-                  <span className="font-black text-slate-800">Santa Vida</span>
+                  <span className="font-black text-slate-800">{hospitalName}</span>
                 </div>
                 <NavLinks pathname={pathname} isAdmin={isAdmin} onNavigate={() => setMenuOpen(false)} />
                 <Button variant="ghost" className="mt-8 w-full justify-start text-coral-600" onClick={logout}>

@@ -9,6 +9,9 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { api } from "@/lib/api";
+import { defaultSiteSettings, siteName } from "@/lib/defaults";
+import type { SiteSettings } from "@/lib/types";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,10 +20,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings);
+
+  useEffect(() => {
+    api
+      .get<SiteSettings>("/settings")
+      .then((response) => setSettings(response.data))
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!loading && user) router.replace("/admin");
   }, [loading, user, router]);
+
+  const hospitalName = siteName(settings.hospitalName);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -45,7 +58,7 @@ export default function LoginPage() {
           <span className="flex size-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
             <HeartPulse className="size-7" />
           </span>
-          Hospital Santa Vida
+          {hospitalName}
         </motion.div>
 
         <motion.div
@@ -86,7 +99,7 @@ export default function LoginPage() {
           </div>
         </motion.div>
 
-        <p className="relative text-sm text-brand-50/70">© {new Date().getFullYear()} Hospital Santa Vida</p>
+        <p className="relative text-sm text-brand-50/70">© {new Date().getFullYear()} {hospitalName}</p>
       </div>
 
       <div className="relative flex items-center justify-center bg-mint-soft px-5 py-12 sm:px-10">

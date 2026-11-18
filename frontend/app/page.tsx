@@ -9,20 +9,12 @@ import { PostCard } from "@/components/post-card";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { api, getErrorMessage } from "@/lib/api";
+import { defaultSiteSettings, siteName } from "@/lib/defaults";
 import type { Post, SiteSettings } from "@/lib/types";
-
-const defaultSettings: SiteSettings = {
-  id: "main",
-  hospitalName: "Hospital Santa Vida",
-  tagline: "Cuidado que acolhe, informação que transforma",
-  carouselIntervalMs: 7000,
-  primaryColor: "#0EA5A4",
-  secondaryColor: "#FF8A65",
-};
 
 export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -166,9 +158,12 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-slate-500 sm:flex-row lg:px-10">
           <div className="flex items-center gap-2 font-extrabold text-slate-700">
             <Activity className="size-5 text-brand-500" />
-            {settings.hospitalName}
+            {siteName(settings.hospitalName)}
           </div>
-          <p>© {new Date().getFullYear()} — Cuidado que acolhe, informação que transforma.</p>
+          <p>
+            © {new Date().getFullYear()}
+            {settings.tagline ? ` — ${settings.tagline}.` : ""}
+          </p>
         </div>
       </footer>
     </div>
