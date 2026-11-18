@@ -110,7 +110,10 @@ DATABASE_URL="postgresql://hospital:hospital@localhost:5434/hospital_blog?schema
 JWT_SECRET="troque-este-segredo-em-producao"
 JWT_EXPIRES_IN="8h"
 PORT=3001
+CORS_ORIGINS="http://localhost:3005"
 ```
+
+`CORS_ORIGINS` é a lista de origens de navegador liberadas na API, separadas por vírgula. Em produção, defina as origens reais (ex.: `https://hospital.com`); sem a variável a API não libera nenhuma origem. Em desenvolvimento, sem a variável, o frontend local (`localhost:3005`) é liberado automaticamente.
 
 `frontend/.env.local`:
 
@@ -146,6 +149,6 @@ Use um reverse proxy (Nginx/Caddy), HTTPS e substitua os segredos. O `docker-com
 
 ### Pendência de segurança (próximo foco do backend)
 
-- Restringir o CORS de `src/main.ts` às origens reais de produção (hoje aceita qualquer origem para facilitar o desenvolvimento local).
-- Manter `.env` fora do controle de versão e injetar `DATABASE_URL`, `JWT_SECRET` e `JWT_EXPIRES_IN` pelo ambiente da VPS.
+- ~~Restringir o CORS de `src/main.ts` às origens reais~~ — feito: a API usa a allowlist de `CORS_ORIGINS` e nega qualquer origem de navegador fora dela.
+- Manter `.env` fora do controle de versão e injetar `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN` e `CORS_ORIGINS` pelo ambiente da VPS.
 - Gerar um `JWT_SECRET` forte e trocar as senhas do seed antes de publicar.
