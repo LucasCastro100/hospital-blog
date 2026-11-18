@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Palette, Save, Settings2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSettings } from "@/components/settings-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,8 @@ import {
 import { api, getErrorMessage } from "@/lib/api";
 import type { SiteSettings } from "@/lib/types";
 
-export function SettingsForm({ settings, onUpdated }: { settings: SiteSettings; onUpdated: () => void }) {
+export function SettingsForm({ onUpdated }: { onUpdated: () => void }) {
+  const { settings, apply } = useSettings();
   const [form, setForm] = useState(settings);
   const [saving, setSaving] = useState(false);
 
@@ -39,6 +41,8 @@ export function SettingsForm({ settings, onUpdated }: { settings: SiteSettings; 
       };
       const { data } = await api.patch<SiteSettings>("/admin/settings", payload);
       setForm(data);
+      // Propaga para a fonte única: a barra lateral do painel atualiza na hora.
+      apply(data);
       toast.success("Configurações salvas");
       onUpdated();
     } catch (error) {

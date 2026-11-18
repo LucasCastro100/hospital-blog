@@ -19,24 +19,18 @@ import { SettingsForm } from "@/components/settings-form";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import { defaultSiteSettings } from "@/lib/defaults";
-import type { Post, SiteSettings, SystemUser } from "@/lib/types";
+import type { Post, SystemUser } from "@/lib/types";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings);
   const [userCount, setUserCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const [postsResponse, settingsResponse] = await Promise.all([
-        api.get<Post[]>("/admin/posts"),
-        api.get<SiteSettings>(user?.role === "ADMIN" ? "/admin/settings" : "/settings"),
-      ]);
+      const postsResponse = await api.get<Post[]>("/admin/posts");
       setPosts(postsResponse.data);
-      setSettings(settingsResponse.data);
 
       if (user?.role === "ADMIN") {
         const usersResponse = await api.get<SystemUser[]>("/users");
@@ -181,7 +175,7 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {user?.role === "ADMIN" && <SettingsForm settings={settings} onUpdated={() => void load()} />}
+      {user?.role === "ADMIN" && <SettingsForm onUpdated={() => void load()} />}
     </div>
   );
 }

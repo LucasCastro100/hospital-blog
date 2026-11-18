@@ -17,13 +17,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { SettingsProvider, useSettings } from "@/components/settings-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
-import { defaultSiteSettings, siteName } from "@/lib/defaults";
-import type { SiteSettings } from "@/lib/types";
+import { siteName } from "@/lib/defaults";
 
 const adminNav = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
@@ -62,22 +61,25 @@ function NavLinks({ pathname, isAdmin, onNavigate }: { pathname: string; isAdmin
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  // As configurações do site vêm de uma fonte única: assim a barra lateral reflete
+  // na hora o que for salvo em "Configurações do site".
+  return (
+    <SettingsProvider>
+      <AdminShell>{children}</AdminShell>
+    </SettingsProvider>
+  );
+}
+
+function AdminShell({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
+  const { settings } = useSettings();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [settings, setSettings] = useState<SiteSettings>(defaultSiteSettings);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [loading, user, router]);
-
-  useEffect(() => {
-    api
-      .get<SiteSettings>("/settings")
-      .then((response) => setSettings(response.data))
-      .catch(() => undefined);
-  }, []);
 
   const hospitalName = siteName(settings.hospitalName);
 
