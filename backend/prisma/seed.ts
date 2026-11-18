@@ -30,6 +30,49 @@ async function main() {
     update: {},
   });
 
+  // Home do hospital montada com blocos (editável no painel). Não sobrescreve o que já foi editado.
+  await prisma.page.upsert({
+    where: { slug: "home" },
+    create: {
+      slug: "home",
+      title: "Página inicial",
+      published: true,
+      blocks: [
+        { id: "home-heading-destaques", type: BlockType.HEADING, order: 0, content: { text: "O que está acontecendo", align: "left" } },
+        { id: "home-carousel", type: BlockType.CAROUSEL, order: 1, content: {} },
+        { id: "home-heading-conteudos", type: BlockType.HEADING, order: 2, content: { text: "Conteúdos para você", align: "left" } },
+        {
+          id: "home-text-conteudos",
+          type: BlockType.TEXT,
+          order: 3,
+          content: {
+            text: "Campanhas, novidades e orientações escritas pela nossa equipe para cuidar de você e da sua família.",
+            align: "left",
+          },
+        },
+        { id: "home-posts", type: BlockType.POSTS, order: 4, content: {} },
+        {
+          id: "home-hero",
+          type: BlockType.HERO,
+          order: 5,
+          content: {
+            eyebrow: "Sobre nós",
+            title: "Saúde se constrói com informação, cuidado e presença.",
+            text: "Somos uma rede de atendimento comprometida em acolher cada pessoa com atenção, respeito e excelência. Aqui você encontra orientações confiáveis sobre prevenção, tratamentos e a vida da nossa comunidade.",
+            buttonText: "Acessar área interna",
+            buttonUrl: "/login",
+            items: [
+              { icon: "heart-handshake", title: "Acolhimento", text: "Cada pessoa é única e merece atenção." },
+              { icon: "shield-check", title: "Confiança", text: "Informação clara e responsável." },
+              { icon: "stethoscope", title: "Excelência", text: "Equipe dedicada e estrutura moderna." },
+            ],
+          },
+        },
+      ],
+    },
+    update: {},
+  });
+
   const admin = await prisma.user.findUniqueOrThrow({ where: { email: "admin@hospital.com" } });
 
   if ((await prisma.post.count()) === 0) {

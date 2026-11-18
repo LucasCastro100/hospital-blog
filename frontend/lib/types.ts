@@ -1,6 +1,19 @@
 export type Role = "ADMIN" | "EDITOR" | "USER";
 export type PostStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
-export type BlockType = "HEADING" | "TEXT" | "IMAGE" | "GALLERY" | "VIDEO" | "BUTTON" | "QUOTE" | "COLOR" | "SPACER";
+export type BlockType =
+  | "HEADING"
+  | "TEXT"
+  | "IMAGE"
+  | "GALLERY"
+  | "VIDEO"
+  | "BUTTON"
+  | "QUOTE"
+  | "COLOR"
+  | "SPACER"
+  | "CAROUSEL"
+  | "POSTS"
+  | "HERO"
+  | "CARDS";
 
 export type ImageLayout = "full" | "left" | "right";
 export type ImageEffect = "none" | "vivid" | "grayscale" | "sepia" | "blur" | "warm" | "cool";
@@ -10,6 +23,13 @@ export interface GalleryImage {
   url: string;
   alt?: string;
   caption?: string;
+}
+
+/** Cartão usado pelos blocos de destaque (HERO) e de cartões (CARDS). */
+export interface BlockCard {
+  icon?: string;
+  title: string;
+  text: string;
 }
 
 export interface AuthUser {
@@ -47,6 +67,12 @@ export interface BlockContent {
   radius?: number;
   aspect?: string;
   height?: number;
+  eyebrow?: string;
+  title?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  background?: string;
+  items?: BlockCard[];
 }
 
 export interface Block {
@@ -67,6 +93,17 @@ export interface Post {
   publishedAt?: string | null;
   author: { name: string };
   blocks: Block[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Página montada com blocos no painel (estilo WordPress). A home tem o slug "home". */
+export interface Page {
+  id: string;
+  slug: string;
+  title: string;
+  blocks: Block[];
+  published: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

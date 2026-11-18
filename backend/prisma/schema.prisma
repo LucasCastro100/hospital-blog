@@ -29,6 +29,10 @@ enum BlockType {
   QUOTE
   COLOR
   SPACER
+  CAROUSEL
+  POSTS
+  HERO
+  CARDS
 }
 
 model User {
@@ -93,6 +97,19 @@ model Block {
 
   @@index([postId, order])
   @@map("blocks")
+}
+
+/// Página montada com blocos no painel (estilo WordPress). A home é a página de slug "home".
+model Page {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  blocks    Json     @default("[]")
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pages")
 }
 
 model SiteSetting {

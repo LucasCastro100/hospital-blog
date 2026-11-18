@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Gamepad2,
   HeartPulse,
+  Home,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -26,6 +27,7 @@ import { siteName } from "@/lib/defaults";
 
 const adminNav = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
+  { href: "/admin/pagina-inicial", label: "Página inicial", icon: Home },
   { href: "/admin/posts", label: "Conteúdos", icon: Newspaper },
   { href: "/display", label: "Tela geral", icon: MonitorPlay },
   { href: "/admin/displays", label: "Telas / TVs", icon: MonitorPlay },

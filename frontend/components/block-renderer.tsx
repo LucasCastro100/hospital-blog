@@ -1,10 +1,66 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "motion/react";
-import { ArrowUpRight, Quote } from "lucide-react";
+import {
+  Activity,
+  ArrowUpRight,
+  Award,
+  Clock,
+  HeartHandshake,
+  MapPin,
+  Phone,
+  Quote,
+  ShieldCheck,
+  Star,
+  Stethoscope,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRef, type CSSProperties, type ReactNode } from "react";
-import type { Block, BlockContent, ImageAnimation, ImageEffect } from "@/lib/types";
+import { InfoCarousel } from "@/components/info-carousel";
+import { PostCard } from "@/components/post-card";
+import { defaultSiteSettings } from "@/lib/defaults";
+import type { Block, BlockContent, ImageAnimation, ImageEffect, Post, SiteSettings } from "@/lib/types";
+
+/** Ícones disponíveis para os cartões dos blocos HERO e CARDS. */
+export const cardIconOptions = [
+  { value: "heart-handshake", label: "Acolhimento" },
+  { value: "shield-check", label: "Confiança" },
+  { value: "stethoscope", label: "Saúde" },
+  { value: "activity", label: "Atividade" },
+  { value: "users", label: "Equipe" },
+  { value: "clock", label: "Atendimento 24h" },
+  { value: "star", label: "Destaque" },
+  { value: "phone", label: "Contato" },
+  { value: "map-pin", label: "Localização" },
+  { value: "award", label: "Excelência" },
+];
+
+const cardIcons: Record<string, LucideIcon> = {
+  "heart-handshake": HeartHandshake,
+  "shield-check": ShieldCheck,
+  stethoscope: Stethoscope,
+  activity: Activity,
+  users: Users,
+  clock: Clock,
+  star: Star,
+  phone: Phone,
+  "map-pin": MapPin,
+  award: Award,
+};
+
+export function CardIcon({ name, className }: { name?: string; className?: string }) {
+  const Icon = (name && cardIcons[name]) || HeartHandshake;
+  return <Icon className={className} />;
+}
+
+/** Dados que os blocos dinâmicos (carrossel e grade) precisam para renderizar. */
+export interface BlockRenderContext {
+  posts?: Post[];
+  settings?: SiteSettings;
+}
 
 const alignClass = {
   left: "text-left",
@@ -132,7 +188,15 @@ function ParallaxLayer({ children }: { children: ReactNode }) {
   );
 }
 
-export function BlockRenderer({ blocks, animated = true }: { blocks: Block[]; animated?: boolean }) {
+export function BlockRenderer({
+  blocks,
+  animated = true,
+  context,
+}: {
+  blocks: Block[];
+  animated?: boolean;
+  context?: BlockRenderContext;
+}) {
   return (
     <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
       {blocks.map((block, index) => (
@@ -144,14 +208,22 @@ export function BlockRenderer({ blocks, animated = true }: { blocks: Block[]; an
           transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.3) }}
           className="min-w-0"
         >
-          <BlockContent block={block} animated={animated} />
+          <BlockContent block={block} animated={animated} context={context} />
         </motion.div>
       ))}
     </div>
   );
 }
 
-function BlockContent({ block, animated = true }: { block: Block; animated?: boolean }) {
+function BlockContent({
+  block,
+  animated = true,
+  context,
+}: {
+  block: Block;
+  animated?: boolean;
+  context?: BlockRenderContext;
+}) {
   const content = block.content ?? {};
   const align = alignClass[content.align ?? "left"];
   const style = typography(content);
@@ -376,6 +448,117 @@ function BlockContent({ block, animated = true }: { block: Block; animated?: boo
 
     case "SPACER":
       return <div aria-hidden style={{ height: Math.max(8, Math.min(content.height ?? 32, 300)) }} />;
+
+    case "CAROUSEL":
+      return (
+        <InfoCarousel posts={context?.posts ?? []} settings={context?.settings ?? defaultSiteSettings} />
+      );
+
+    case "POSTS": {
+      const posts = context?.posts ?? [];
+      if (posts.length === 0) {
+        return (
+          <div className="rounded-3xl border border-dashed border-brand-200 bg-white/60 p-12 text-center text-slate-500">
+            Nenhum conteúdo publicado ainda.
+          </div>
+        );
+      }
+      return (
+        <div id="conteudos" className="grid scroll-mt-24 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {posts.map((post, index) => (
+            <PostCard key={post.id} post={post} index={index} />
+          ))}
+        </div>
+      );
+    }
+
+    case "HERO": {
+      const items = content.items ?? [];
+      const button =
+        content.buttonText && content.buttonUrl?.startsWith("/") ? (
+          <Link
+            href={content.buttonUrl}
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-bold text-brand-700 shadow-lg transition-transform hover:-translate-y-0.5 hover:bg-sun-100"
+          >
+            {content.buttonText}
+            <ArrowUpRight className="size-5" />
+          </Link>
+        ) : content.buttonText ? (
+          <a
+            href={content.buttonUrl || "#"}
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-bold text-brand-700 shadow-lg transition-transform hover:-translate-y-0.5 hover:bg-sun-100"
+          >
+            {content.buttonText}
+            <ArrowUpRight className="size-5" />
+          </a>
+        ) : null;
+
+      return (
+        <section
+          id="sobre"
+          className="relative scroll-mt-24 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-brand-600 via-brand-500 to-brand-400 px-8 py-14 text-white sm:px-14 lg:px-18 lg:py-18"
+          style={content.background ? { backgroundImage: "none", backgroundColor: content.background } : undefined}
+        >
+          <div className="pointer-events-none absolute -right-16 -top-20 size-72 rounded-full border-[40px] border-white/10" />
+          <div className="pointer-events-none absolute -bottom-24 right-1/3 size-64 rounded-full bg-sun-500/20 blur-2xl" />
+          <div className="relative max-w-3xl">
+            {content.eyebrow && (
+              <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-brand-100">{content.eyebrow}</p>
+            )}
+            {content.title && (
+              <h2 className="mt-3 text-balance text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                {content.title}
+              </h2>
+            )}
+            {content.text && (
+              <p className="mt-5 max-w-2xl whitespace-pre-line text-base leading-relaxed text-brand-50/90 sm:text-lg">
+                {content.text}
+              </p>
+            )}
+            {button}
+          </div>
+
+          {items.length > 0 && (
+            <div className="relative mt-12 grid gap-4 sm:grid-cols-3">
+              {items.map((item, index) => (
+                <div key={`${item.title}-${index}`} className="rounded-2xl bg-white/12 p-5 backdrop-blur-sm">
+                  <CardIcon name={item.icon} className="size-6 text-sun-500" />
+                  <h3 className="mt-3 font-extrabold">{item.title}</h3>
+                  <p className="mt-1 text-sm text-brand-50/80">{item.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    case "CARDS": {
+      const items = content.items ?? [];
+      if (items.length === 0) return null;
+      const columns = Math.max(1, Math.min(content.columns ?? 3, 4));
+      const gridClass =
+        columns === 1
+          ? "grid-cols-1"
+          : columns === 2
+            ? "sm:grid-cols-2"
+            : columns === 4
+              ? "sm:grid-cols-2 lg:grid-cols-4"
+              : "sm:grid-cols-3";
+      return (
+        <section className={`grid min-w-0 gap-4 ${gridClass}`}>
+          {items.map((item, index) => (
+            <div key={`${item.title}-${index}`} className="min-w-0 rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+              <span className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                <CardIcon name={item.icon} className="size-5" />
+              </span>
+              <h3 className="mt-4 font-extrabold text-slate-800">{item.title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">{item.text}</p>
+            </div>
+          ))}
+        </section>
+      );
+    }
 
     default:
       return null;
