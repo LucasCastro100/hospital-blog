@@ -184,13 +184,23 @@ const typeLabel: Record<BlockType, string> = {
 };
 
 const effectOptions = [
-  { value: "none", label: "Sem efeito" },
+  { value: "none", label: "Sem filtro" },
   { value: "vivid", label: "Vibrante" },
   { value: "warm", label: "Quente" },
   { value: "cool", label: "Frio" },
   { value: "grayscale", label: "Preto e branco" },
   { value: "sepia", label: "Sépia" },
   { value: "blur", label: "Desfoque" },
+];
+
+const animationOptions = [
+  { value: "none", label: "Sem animação" },
+  { value: "fade", label: "Surgir suavemente" },
+  { value: "zoom", label: "Zoom lento (Ken Burns)" },
+  { value: "slide", label: "Deslizar da esquerda" },
+  { value: "float", label: "Flutuar" },
+  { value: "pulse", label: "Pulsar" },
+  { value: "parallax", label: "Paralaxe ao rolar" },
 ];
 
 let blockSeq = 0;
@@ -607,7 +617,7 @@ function CanvasBlock({
         <span className="hidden px-1.5 text-[10px] font-bold text-slate-400 lg:block">#{index + 1}</span>
       </div>
       <div className="min-w-0">
-        <BlockRenderer blocks={[block]} />
+        <BlockRenderer blocks={[block]} animated={false} />
       </div>
     </motion.div>
   );
@@ -713,7 +723,13 @@ function BlockFields({
             ]}
           />
           <SelectField
-            label="Efeito"
+            label="Animação"
+            value={content.animation ?? "none"}
+            onValueChange={(value) => onChange({ animation: value as BlockContent["animation"] })}
+            options={animationOptions}
+          />
+          <SelectField
+            label="Filtro de cor"
             value={content.effect ?? "none"}
             onValueChange={(value) => onChange({ effect: value as BlockContent["effect"] })}
             options={effectOptions}
@@ -820,7 +836,13 @@ function BlockFields({
             ]}
           />
           <SelectField
-            label="Efeito"
+            label="Animação"
+            value={content.animation ?? "none"}
+            onValueChange={(value) => onChange({ animation: value as BlockContent["animation"] })}
+            options={animationOptions}
+          />
+          <SelectField
+            label="Filtro de cor"
             value={content.effect ?? "none"}
             onValueChange={(value) => onChange({ effect: value as BlockContent["effect"] })}
             options={effectOptions}

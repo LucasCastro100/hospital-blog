@@ -4,6 +4,7 @@ export type BlockType = "HEADING" | "TEXT" | "IMAGE" | "GALLERY" | "VIDEO" | "BU
 
 export type ImageLayout = "full" | "left" | "right";
 export type ImageEffect = "none" | "vivid" | "grayscale" | "sepia" | "blur" | "warm" | "cool";
+export type ImageAnimation = "none" | "fade" | "zoom" | "slide" | "float" | "pulse" | "parallax";
 
 export interface GalleryImage {
   url: string;
@@ -37,6 +38,7 @@ export interface BlockContent {
   author?: string;
   layout?: ImageLayout;
   effect?: ImageEffect;
+  animation?: ImageAnimation;
   images?: GalleryImage[];
   columns?: number;
   videoId?: string;

@@ -1,10 +1,10 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
 import { ArrowUpRight, Quote } from "lucide-react";
 import Image from "next/image";
-import type { CSSProperties } from "react";
-import type { Block, BlockContent, ImageEffect } from "@/lib/types";
+import { useRef, type CSSProperties, type ReactNode } from "react";
+import type { Block, BlockContent, ImageAnimation, ImageEffect } from "@/lib/types";
 
 const alignClass = {
   left: "text-left",
@@ -40,26 +40,118 @@ export function getYouTubeId(url?: string): string | null {
   return match?.[1] ?? null;
 }
 
-export function BlockRenderer({ blocks }: { blocks: Block[] }) {
+function AnimatedFrame({
+  animation = "none",
+  animated = true,
+  className,
+  style,
+  children,
+  delay = 0,
+}: {
+  animation?: ImageAnimation;
+  animated?: boolean;
+  className?: string;
+  style?: CSSProperties;
+  children: ReactNode;
+  delay?: number;
+}) {
+  const preset = animated ? animation : "none";
+
+  if (preset === "zoom") {
+    return (
+      <motion.div
+        className={className}
+        style={style}
+        initial={{ scale: 1 }}
+        whileInView={{ scale: [1, 1.1, 1] }}
+        viewport={{ once: false, amount: 0.4 }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
+  if (preset === "float") {
+    return (
+      <motion.div
+        className={className}
+        style={style}
+        animate={{ y: [0, -12, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
+  if (preset === "pulse") {
+    return (
+      <motion.div
+        className={className}
+        style={style}
+        animate={{ scale: [1, 1.03, 1] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
+  if (preset === "fade" || preset === "slide") {
+    return (
+      <motion.div
+        className={className}
+        style={style}
+        initial={{ opacity: 0, x: preset === "slide" ? -50 : 0, y: preset === "fade" ? 20 : 0 }}
+        whileInView={{ opacity: 1, x: 0, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.85, ease: "easeOut", delay }}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className={className} style={style}>
+      {children}
+    </div>
+  );
+}
+
+function ParallaxLayer({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const y = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+
+  return (
+    <motion.div ref={ref} className="absolute inset-0" style={{ y, scale: 1.2 }}>
+      {children}
+    </motion.div>
+  );
+}
+
+export function BlockRenderer({ blocks, animated = true }: { blocks: Block[]; animated?: boolean }) {
   return (
     <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
       {blocks.map((block, index) => (
         <motion.div
           key={block.id ?? `${block.type}-${index}`}
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={animated ? { opacity: 0, y: 24 } : false}
+          whileInView={animated ? { opacity: 1, y: 0 } : undefined}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.3) }}
           className="min-w-0"
         >
-          <BlockContent block={block} />
+          <BlockContent block={block} animated={animated} />
         </motion.div>
       ))}
     </div>
   );
 }
 
-function BlockContent({ block }: { block: Block }) {
+function BlockContent({ block, animated = true }: { block: Block; animated?: boolean }) {
   const content = block.content ?? {};
   const align = alignClass[content.align ?? "left"];
   const style = typography(content);
@@ -90,20 +182,29 @@ function BlockContent({ block }: { block: Block }) {
       const layout = content.layout ?? "full";
       const withText = layout !== "full" && Boolean(content.text?.trim());
 
+      const picture = (
+        <Image
+          src={content.url}
+          alt={content.alt || "Imagem do conteúdo"}
+          fill
+          unoptimized
+          className="object-cover transition-transform duration-700 hover:scale-105"
+          style={{ filter: effectFilter[content.effect ?? "none"] }}
+        />
+      );
+
       const image = (
-        <div className="relative min-w-0 overflow-hidden" style={{ borderRadius: content.radius ?? 24 }}>
+        <AnimatedFrame
+          animation={content.animation}
+          animated={animated}
+          className="relative min-w-0 overflow-hidden"
+          style={{ borderRadius: content.radius ?? 24 }}
+        >
           <div
             className="relative w-full overflow-hidden bg-brand-50"
             style={{ aspectRatio: content.aspect && content.aspect !== "auto" ? content.aspect : undefined }}
           >
-            <Image
-              src={content.url}
-              alt={content.alt || "Imagem do conteúdo"}
-              fill
-              unoptimized
-              className="object-cover transition-transform duration-700 hover:scale-105"
-              style={{ filter: effectFilter[content.effect ?? "none"] }}
-            />
+            {animated && content.animation === "parallax" ? <ParallaxLayer>{picture}</ParallaxLayer> : picture}
             {content.overlayColor && (content.overlayOpacity ?? 0) > 0 && (
               <div
                 aria-hidden
@@ -112,7 +213,7 @@ function BlockContent({ block }: { block: Block }) {
               />
             )}
           </div>
-        </div>
+        </AnimatedFrame>
       );
 
       if (!withText) {
@@ -161,27 +262,43 @@ function BlockContent({ block }: { block: Block }) {
         <figure className="min-w-0">
           <div className={`grid min-w-0 gap-2 sm:gap-3 ${gridClass}`}>
             {images.map((image, index) => (
-              <div
+              <AnimatedFrame
                 key={`${image.url}-${index}`}
+                animation={content.animation}
+                animated={animated}
+                delay={Math.min(index * 0.1, 0.4)}
                 className="min-w-0 overflow-hidden bg-brand-50"
                 style={{ borderRadius: content.radius ?? 16 }}
               >
                 <div className="relative aspect-square w-full">
-                  <Image
-                    src={image.url}
-                    alt={image.alt || `Imagem ${index + 1}`}
-                    fill
-                    unoptimized
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    style={{ filter: effectFilter[content.effect ?? "none"] }}
-                  />
+                  {animated && content.animation === "parallax" ? (
+                    <ParallaxLayer>
+                      <Image
+                        src={image.url}
+                        alt={image.alt || `Imagem ${index + 1}`}
+                        fill
+                        unoptimized
+                        className="object-cover transition-transform duration-500 hover:scale-105"
+                        style={{ filter: effectFilter[content.effect ?? "none"] }}
+                      />
+                    </ParallaxLayer>
+                  ) : (
+                    <Image
+                      src={image.url}
+                      alt={image.alt || `Imagem ${index + 1}`}
+                      fill
+                      unoptimized
+                      className="object-cover transition-transform duration-500 hover:scale-105"
+                      style={{ filter: effectFilter[content.effect ?? "none"] }}
+                    />
+                  )}
                 </div>
                 {image.caption && (
                   <figcaption className="px-2 py-2 text-center text-xs font-medium text-slate-500 break-words">
                     {image.caption}
                   </figcaption>
                 )}
-              </div>
+              </AnimatedFrame>
             ))}
           </div>
         </figure>
