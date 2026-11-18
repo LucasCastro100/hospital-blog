@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  USER
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum BlockType {
+  HEADING
+  TEXT
+  IMAGE
+  GALLERY
+  VIDEO
+  BUTTON
+  QUOTE
+  COLOR
+  SPACER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  posts        Post[]
+
+  @@map("users")
+}
+
+model DisplayScreen {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts     Post[]
+
+  @@map("display_screens")
+}
+
+model Post {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String     @unique
+  summary     String?
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  order       Int        @default(0)
+  publishedAt DateTime?
+  authorId    String
+  author      User       @relation(fields: [authorId], references: [id])
+  displayScreens DisplayScreen[]
+  blocks      Block[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([status, order])
+  @@map("posts")
+}
+
+model Block {
+  id      String    @id @default(uuid())
+  postId  String
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type    BlockType
+  content Json
+  order   Int
+
+  @@index([postId, order])
+  @@map("blocks")
+}
+
+model SiteSetting {
+  id                 String   @id @default("main")
+  hospitalName       String   @default("Hospital Santa Vida")
+  tagline            String   @default("Cuidado que acolhe, informação que transforma")
+  carouselIntervalMs Int      @default(7000)
+  primaryColor       String   @default("#0EA5A4")
+  secondaryColor     String   @default("#FF8A65")
+  updatedAt          DateTime @updatedAt
+
+  @@map("site_settings")
+}

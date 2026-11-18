@@ -1,0 +1,76 @@
+name: Controle de versão (tags)
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Tipo de incremento (patch, minor ou major)
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      notes:
+        description: Notas da release (opcional — se vazio, o GitHub gera o changelog)
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    name: Criar tag e release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Calcular próxima versão
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(tr -d '[:space:]' < VERSION)"
+          IFS='.' read -r major minor patch <<< "$current"
+
+          case "${{ inputs.bump }}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+            *) echo "Tipo de incremento inválido" >&2; exit 1 ;;
+          esac
+
+          next="${major}.${minor}.${patch}"
+          echo "next=${next}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${next}" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$next" > VERSION
+          echo "Próxima versão: $next"
+
+      - name: Publicar commit e tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add VERSION
+          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
+          git push origin HEAD:${{ github.ref_name }}
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Criar Release no GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body: ${{ inputs.notes }}
+          generate_release_notes: true
