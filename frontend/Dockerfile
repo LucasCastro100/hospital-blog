@@ -14,6 +14,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_API_URL=https://projeto-hospital.ideiasdev.tech/api
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+# Card de demonstração no login (temporário). Valores vêm do build, nunca do repo.
+ARG NEXT_PUBLIC_DEMO_EMAIL=admin@hospital.com
+ARG NEXT_PUBLIC_DEMO_PASSWORD=""
+ENV NEXT_PUBLIC_DEMO_EMAIL=${NEXT_PUBLIC_DEMO_EMAIL}
+ENV NEXT_PUBLIC_DEMO_PASSWORD=${NEXT_PUBLIC_DEMO_PASSWORD}
 RUN pnpm build
 
 FROM node:22-alpine AS runner

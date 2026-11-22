@@ -179,6 +179,7 @@ O workflow de deploy conecta por SSH. Configure no repositório
 | `VPS_HOST` | `<IP_DA_VPS>` |
 | `VPS_USER` | `root` |
 | `VPS_SSH_KEY` | chave **privada** local que acessa a VPS (`~/.ssh/id_ed25519`) |
+| `DEMO_ADMIN_PASSWORD` | senha exibida no card temporário da tela de login (remover o card quando não for mais necessário) |
 
 Pelo `gh`, do seu computador:
 
@@ -200,6 +201,8 @@ cd /opt/projects/node/hospital-blog
 docker build -t hospital-api:latest -f backend/deploy/Dockerfile.api backend
 docker build -t hospital-web:latest \
   --build-arg NEXT_PUBLIC_API_URL=https://projeto-hospital.ideiasdev.tech/api \
+  --build-arg NEXT_PUBLIC_DEMO_EMAIL=admin@hospital.com \
+  --build-arg NEXT_PUBLIC_DEMO_PASSWORD="senha_do_card_de_demo" \
   frontend
 
 docker stack deploy -c backend/deploy/docker-compose.swarm.yml hospital_blog
@@ -286,6 +289,8 @@ git reset --hard v0.0.1
 docker build -t hospital-api:latest -f backend/deploy/Dockerfile.api backend
 docker build -t hospital-web:latest \
   --build-arg NEXT_PUBLIC_API_URL=https://projeto-hospital.ideiasdev.tech/api \
+  --build-arg NEXT_PUBLIC_DEMO_EMAIL=admin@hospital.com \
+  --build-arg NEXT_PUBLIC_DEMO_PASSWORD="senha_do_card_de_demo" \
   frontend
 docker service update --force --image hospital-api:latest hospital_blog_api
 docker service update --force --image hospital-web:latest hospital_blog_web

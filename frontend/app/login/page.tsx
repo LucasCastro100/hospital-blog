@@ -177,11 +177,13 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-8 rounded-2xl border border-dashed border-brand-200 bg-brand-50/50 p-4 text-xs text-slate-600">
-              <p className="font-extrabold text-brand-700">Contas de demonstração</p>
-              <p className="mt-2">Administrador: admin@hospital.com / admin123</p>
-              <p>Editor: editor@hospital.com / admin123</p>
-            </div>
+            {(process.env.NEXT_PUBLIC_DEMO_EMAIL || process.env.NEXT_PUBLIC_DEMO_PASSWORD) && (
+              <div className="mt-8 rounded-2xl border border-dashed border-brand-200 bg-brand-50/50 p-4 text-xs text-slate-600">
+                <p className="font-extrabold text-brand-700">Acesso de demonstração</p>
+                <p className="mt-2">E-mail: {process.env.NEXT_PUBLIC_DEMO_EMAIL}</p>
+                <p>Senha: {process.env.NEXT_PUBLIC_DEMO_PASSWORD}</p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

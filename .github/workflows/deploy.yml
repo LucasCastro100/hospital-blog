@@ -39,6 +39,8 @@ jobs:
             docker build \
               -t hospital-web:latest \
               --build-arg NEXT_PUBLIC_API_URL=https://projeto-hospital.ideiasdev.tech/api \
+              --build-arg NEXT_PUBLIC_DEMO_EMAIL=admin@hospital.com \
+              --build-arg NEXT_PUBLIC_DEMO_PASSWORD="${{ secrets.DEMO_ADMIN_PASSWORD }}" \
               frontend
 
             docker stack deploy --compose-file backend/deploy/docker-compose.swarm.yml hospital_blog
