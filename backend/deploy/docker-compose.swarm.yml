@@ -1,0 +1,80 @@
+# Stack de produção do Hospital Blog na VPS (Docker Swarm + Traefik).
+#
+# Nomes próprios deste projeto — não compartilha nada com ICM/control-school:
+#   stack: hospital_blog
+#   serviços: hospital_blog_api, hospital_blog_web
+#   secrets: hospital_database_url, hospital_jwt_secret
+#   banco: hospital_blog (usuário hospital_blog) no Postgres compartilhado
+#   domínio: projeto-hospital.ideiasdev.tech
+#
+# Deploy: docker stack deploy -c backend/deploy/docker-compose.swarm.yml hospital_blog
+
+version: "3.8"
+
+services:
+  api:
+    image: hospital-api:latest
+    environment:
+      PORT: "3001"
+      JWT_EXPIRES_IN: "8h"
+      CORS_ORIGINS: https://projeto-hospital.ideiasdev.tech
+    secrets:
+      - hospital_database_url
+      - hospital_jwt_secret
+    networks:
+      - network_public
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- http://127.0.0.1:3001/api/settings >/dev/null || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+      # O /api é roteado direto para a API pelo Traefik (o Next não faz proxy).
+      # Em Swarm, labels do Traefik vão em deploy.labels — não no nível do serviço.
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=network_public"
+        - "traefik.http.routers.hospital-blog-api.rule=Host(`projeto-hospital.ideiasdev.tech`) && PathPrefix(`/api`)"
+        - "traefik.http.routers.hospital-blog-api.entrypoints=websecure"
+        - "traefik.http.routers.hospital-blog-api.tls=true"
+        - "traefik.http.routers.hospital-blog-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.hospital-blog-api.priority=100"
+        - "traefik.http.services.hospital-blog-api.loadbalancer.server.port=3001"
+
+  web:
+    image: hospital-web:latest
+    networks:
+      - network_public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=network_public"
+        - "traefik.http.routers.hospital-blog.rule=Host(`projeto-hospital.ideiasdev.tech`)"
+        - "traefik.http.routers.hospital-blog.priority=10"
+        - "traefik.http.routers.hospital-blog.entrypoints=websecure"
+        - "traefik.http.routers.hospital-blog.tls=true"
+        - "traefik.http.routers.hospital-blog.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.hospital-blog.loadbalancer.server.port=3000"
+
+secrets:
+  hospital_database_url:
+    external: true
+  hospital_jwt_secret:
+    external: true
+
+networks:
+  network_public:
+    external: true
+    name: network_public

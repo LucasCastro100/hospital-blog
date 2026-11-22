@@ -1,0 +1,52 @@
+name: Deploy Hospital Blog na VPS
+
+# Publicar uma tag v*.*.* faz deploy em produção.
+# Antes de criar a tag: revisar mudanças, rodar tsc/lint/build e conferir o banco.
+# Secrets do repositório: VPS_HOST, VPS_USER, VPS_SSH_KEY.
+# Secrets do Swarm (criados uma vez na VPS): hospital_database_url, hospital_jwt_secret.
+# Guia completo: DEPLOY.md
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  deploy:
+    name: Deploy ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Deploy por SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            set -e
+            cd /opt/projects/node/hospital-blog
+
+            # Alias de deploy key dedicado deste projeto (ver DEPLOY.md).
+            git remote set-url origin git@github.com-hospital:LucasCastro100/hospital-blog.git
+            git fetch --all --tags
+            git reset --hard ${{ github.ref_name }}
+
+            docker build -t hospital-api:latest -f backend/deploy/Dockerfile.api backend
+            docker build \
+              -t hospital-web:latest \
+              --build-arg NEXT_PUBLIC_API_URL=https://projeto-hospital.ideiasdev.tech/api \
+              frontend
+
+            docker stack deploy --compose-file backend/deploy/docker-compose.swarm.yml hospital_blog
+
+            # A tag :latest não muda, então sem --force o Swarm não recria a task.
+            docker service update --force --image hospital-api:latest hospital_blog_api
+            docker service update --force --image hospital-web:latest hospital_blog_web
+
+            # As migrações do Prisma são aplicadas pelo entrypoint da API no boot.
+
+            docker image prune -f
