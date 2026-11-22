@@ -8,7 +8,7 @@ próprios do hospital-blog.
 
 | Item | Valor |
 |---|---|
-| VPS | `181.215.134.166` (usuário `root`, chave SSH local `~/.ssh/id_ed25519`) |
+| VPS | `<IP_DA_VPS>` (usuário `root`, chave SSH local `~/.ssh/id_ed25519`) |
 | Domínio | `projeto-hospital.ideiasdev.tech` (SMTP/HTTPS via Traefik) |
 | Diretório na VPS | `/opt/projects/node/hospital-blog` |
 | Stack Swarm | `hospital_blog` |
@@ -32,7 +32,7 @@ No painel de DNS do domínio `ideiasdev.tech`, crie o registro:
 
 - **Tipo:** A
 - **Nome:** `projeto-hospital`
-- **IPv4:** `181.215.134.166`
+- **IPv4:** `<IP_DA_VPS>`
 - **Proxy:** comece **DNS only** (nuvem cinza). O Traefik precisa do HTTP-01 livre
   para emitir o certificado. Depois que o HTTPS funcionar, pode trocar para proxied.
 
@@ -40,7 +40,7 @@ Confirme que propagou:
 
 ```bash
 dig +short projeto-hospital.ideiasdev.tech
-# deve devolver 181.215.134.166
+# deve devolver <IP_DA_VPS>
 ```
 
 > Sem esse registro o stack sobe, mas o Traefik não consegue emitir o certificado
@@ -53,10 +53,10 @@ dig +short projeto-hospital.ideiasdev.tech
 Do seu computador:
 
 ```bash
-ssh root@181.215.134.166
+ssh root@<IP_DA_VPS>
 ```
 
-Se a chave não funcionar, use `ssh -i ~/.ssh/id_ed25519 root@181.215.134.166`.
+Se a chave não funcionar, use `ssh -i ~/.ssh/id_ed25519 root@<IP_DA_VPS>`.
 
 ---
 
@@ -176,14 +176,14 @@ O workflow de deploy conecta por SSH. Configure no repositório
 
 | Nome | Valor |
 |---|---|
-| `VPS_HOST` | `181.215.134.166` |
+| `VPS_HOST` | `<IP_DA_VPS>` |
 | `VPS_USER` | `root` |
 | `VPS_SSH_KEY` | chave **privada** local que acessa a VPS (`~/.ssh/id_ed25519`) |
 
 Pelo `gh`, do seu computador:
 
 ```bash
-gh secret set VPS_HOST -R LucasCastro100/hospital-blog --body '181.215.134.166'
+gh secret set VPS_HOST -R LucasCastro100/hospital-blog --body '<IP_DA_VPS>'
 gh secret set VPS_USER -R LucasCastro100/hospital-blog --body 'root'
 gh secret set VPS_SSH_KEY -R LucasCastro100/hospital-blog < ~/.ssh/id_ed25519
 ```
