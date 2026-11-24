@@ -51,4 +51,8 @@ jobs:
 
             # As migrações do Prisma são aplicadas pelo entrypoint da API no boot.
 
+            # Limpeza: mantém cache limitado e remove imagens versionadas antigas.
+            # Hospital hoje publica só :latest; ao adotar tags imutáveis, manter 3.
             docker image prune -f
+            docker container prune -f
+            docker builder prune -f --keep-storage 3GB || docker builder prune -f --reserved-space 1GB
